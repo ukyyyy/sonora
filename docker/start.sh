@@ -15,8 +15,19 @@ fi
 
 pick_free_port() {
   local port="${1:-3000}"
+  local py_cmd=""
+
+  if command -v python3 >/dev/null 2>&1; then
+    py_cmd="python3"
+  elif command -v python >/dev/null 2>&1; then
+    py_cmd="python"
+  else
+    echo "Python is required to detect free ports" >&2
+    return 1
+  fi
+
   while :; do
-    if python - "$port" <<'PY' 2>/dev/null
+    if "$py_cmd" - "$port" <<'PY' 2>/dev/null
 import socket
 import sys
 s = socket.socket()

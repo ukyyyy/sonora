@@ -1,84 +1,239 @@
 #!/usr/bin/env bash
-# One-command Sonora self-host bootstrap.
-#   ./docker/start.sh          # start (build on first run)
-#   ./docker/start.sh down     # stop
-#   ./docker/start.sh logs     # tail logs
-#   ./docker/start.sh reset    # wipe volumes (DESTROYS DATA)
+# ─────────────────────────────────────────────────────────────────────────────
+# Sonora self-host bootstrap — zero-config one-liner
+#
+#   ./docker/start.sh           start  (auto-generates secrets on first run)
+#   ./docker/start.sh down      stop all services
+#   ./docker/start.sh logs      tail live logs
+#   ./docker/start.sh reset     wipe volumes — DESTROYS ALL DATA
+#   ./docker/start.sh config    re-print the Replit env-var block
+# ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
-
 cd "$(dirname "$0")"
 
-if [ ! -f .env ]; then
-  echo "==> Creating docker/.env from .env.example (edit it before running in production)"
-  cp .env.example .env
+# ── Dependency check ──────────────────────────────────────────────────────────
+need() {
+  if ! command -v "$1" &>/dev/null; then
+    echo "❌  '$1' is required but not installed."
+    [ "${2:-}" ] && echo "    $2"
+    exit 1
+  fi
+}
+need docker  "Install Docker: https://docs.docker.com/engine/install/"
+need python3 "Install Python 3: sudo apt install python3  (or equivalent)"
+
+if ! docker compose version &>/dev/null 2>&1; then
+  echo "❌  'docker compose' (v2) is required."
+  echo "    https://docs.docker.com/compose/install/"
+  exit 1
 fi
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+gen_secret() {
+  # 48 random bytes → url-safe base64, trimmed to 64 printable chars
+  openssl rand -base64 48 | tr -d '+/=\n' | head -c 64
+}
+
+sign_jwt() {
+  # sign_jwt <secret> <role>
+  python3 - "$1" "$2" <<'PY'
+import sys, hmac, hashlib, base64, json, time
+
+def b64url(data):
+    if isinstance(data, str): data = data.encode()
+    return base64.urlsafe_b64encode(data).rstrip(b'=').decode()
+
+secret, role = sys.argv[1], sys.argv[2]
+exp = int(time.time()) + 10 * 365 * 24 * 3600          # 10 years
+
+payload = {"iss": "supabase", "role": role, "exp": exp}
+header  = b64url(json.dumps({"alg": "HS256", "typ": "JWT"}, separators=(',', ':')))
+body    = b64url(json.dumps(payload, separators=(',', ':')))
+msg     = f"{header}.{body}".encode()
+sig     = hmac.new(secret.encode(), msg, hashlib.sha256).digest()
+print(f"{header}.{body}.{b64url(sig)}")
+PY
+}
+
+detect_public_ip() {
+  # Try several metadata/STUN sources; fall back to a placeholder
+  local ip
+  ip=$(curl -fsSL --max-time 3 https://api.ipify.org 2>/dev/null \
+    || curl -fsSL --max-time 3 https://checkip.amazonaws.com 2>/dev/null \
+    || curl -fsSL --max-time 3 https://ifconfig.me 2>/dev/null \
+    || true)
+  ip="${ip//[$'\t\r\n ']}"   # strip whitespace
+  if [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "$ip"
+  else
+    echo "YOUR_VPS_IP"
+  fi
+}
 
 pick_free_port() {
   local port="${1:-3000}"
-  local py_cmd=""
-
-  if command -v python3 >/dev/null 2>&1; then
-    py_cmd="python3"
-  elif command -v python >/dev/null 2>&1; then
-    py_cmd="python"
-  else
-    echo "Python is required to detect free ports" >&2
-    return 1
-  fi
-
   while :; do
-    if "$py_cmd" - "$port" <<'PY' 2>/dev/null
-import socket
-import sys
+    if python3 -c "
+import socket, sys
 s = socket.socket()
 try:
-    s.bind(("0.0.0.0", int(sys.argv[1])))
-    s.close()
-    raise SystemExit(0)
-except OSError:
-    raise SystemExit(1)
-PY
-    then
-      echo "$port"
-      return 0
+  s.bind(('0.0.0.0', int(sys.argv[1]))); s.close(); raise SystemExit(0)
+except OSError: raise SystemExit(1)
+" "$port" 2>/dev/null; then
+      echo "$port"; return 0
     fi
     port=$((port + 1))
   done
 }
 
-APP_PORT="${APP_PORT:-$(grep '^APP_PORT' .env 2>/dev/null | cut -d= -f2 || true)}"
-GATEWAY_PORT="${GATEWAY_PORT:-$(grep '^GATEWAY_PORT' .env 2>/dev/null | cut -d= -f2 || true)}"
+print_replit_config() {
+  # Source .env to read the values
+  # shellcheck disable=SC1091
+  source .env
+  local pub_ip
+  pub_ip=$(detect_public_ip)
+  local gw_port="${GATEWAY_PORT:-8000}"
+  local supa_url="http://${pub_ip}:${gw_port}"
 
-if [ -z "$APP_PORT" ]; then
-  APP_PORT="3000"
-fi
-if [ -z "$GATEWAY_PORT" ]; then
-  GATEWAY_PORT="8000"
-fi
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "  Copy these into your Replit project (Secrets + Env Vars)"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "  ── Replit Env Vars (non-secret) ─────────────────────────────────"
+  echo "  SUPABASE_URL=${supa_url}"
+  echo "  SUPABASE_PROJECT_ID=sonora"
+  echo "  SUPABASE_PUBLISHABLE_KEY=${ANON_KEY}"
+  echo "  VITE_SUPABASE_URL=${supa_url}"
+  echo "  VITE_SUPABASE_PROJECT_ID=sonora"
+  echo "  VITE_SUPABASE_PUBLISHABLE_KEY=${ANON_KEY}"
+  echo ""
+  echo "  ── Replit Secrets (sensitive) ───────────────────────────────────"
+  echo "  SUPABASE_SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY}"
+  echo ""
+  echo "  ── Firewall reminder ────────────────────────────────────────────"
+  echo "  Open port ${gw_port} (Supabase gateway) on your VPS firewall."
+  echo "  The app port (${APP_PORT:-3000}) only needs to be open if you run"
+  echo "  the app container here too; on Replit it is not needed."
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+}
 
-APP_PORT="$(pick_free_port "$APP_PORT")"
-GATEWAY_PORT="$(pick_free_port "$GATEWAY_PORT")"
+# ── Bootstrap .env on first run ───────────────────────────────────────────────
+bootstrap_env() {
+  echo "==> No docker/.env found — generating secrets automatically …"
 
-export APP_PORT GATEWAY_PORT
+  local pg_pass jwt_secret anon_key svc_key pub_ip app_port gw_port
+  pg_pass=$(gen_secret)
+  jwt_secret=$(gen_secret)
+  anon_key=$(sign_jwt "$jwt_secret" "anon")
+  svc_key=$(sign_jwt "$jwt_secret" "service_role")
+  pub_ip=$(detect_public_ip)
+  app_port=$(pick_free_port 3000)
+  gw_port=$(pick_free_port 8000)
 
+  cat > .env <<ENV
+# Auto-generated by ./docker/start.sh — DO NOT commit this file.
+
+# Postgres
+POSTGRES_PASSWORD=${pg_pass}
+POSTGRES_DB=postgres
+POSTGRES_USER=postgres
+
+# JWT (used by GoTrue + PostgREST + Storage — min 32 chars)
+JWT_SECRET=${jwt_secret}
+JWT_EXPIRY=3600
+
+# Pre-signed JWTs (matched to JWT_SECRET above — regenerated if you change JWT_SECRET)
+ANON_KEY=${anon_key}
+SERVICE_ROLE_KEY=${svc_key}
+
+# Public URL the browser and app hit (the nginx gateway).
+# Update SUPABASE_PUBLIC_URL if you put a domain/reverse-proxy in front.
+SUPABASE_PUBLIC_URL=http://${pub_ip}:${gw_port}
+SITE_URL=https://your-replit-app.replit.app
+
+# Ports
+APP_PORT=${app_port}
+GATEWAY_PORT=${gw_port}
+ENV
+
+  echo "==> docker/.env created with freshly generated secrets."
+}
+
+# ── Regenerate JWTs if JWT_SECRET changed ─────────────────────────────────────
+refresh_jwts_if_needed() {
+  # shellcheck disable=SC1091
+  source .env
+
+  local current_anon current_svc
+  current_anon=$(sign_jwt "$JWT_SECRET" "anon")
+  current_svc=$(sign_jwt "$JWT_SECRET" "service_role")
+
+  # Compare only header+payload (ignore exp drift from time of signing)
+  local stored_hp current_hp
+  stored_hp=$(echo "$ANON_KEY" | cut -d. -f1,2)
+  current_hp=$(echo "$current_anon" | cut -d. -f1,2)
+
+  if [ "$stored_hp" != "$current_hp" ]; then
+    echo "==> JWT_SECRET changed — regenerating ANON_KEY and SERVICE_ROLE_KEY …"
+    sed -i "s|^ANON_KEY=.*|ANON_KEY=${current_anon}|" .env
+    sed -i "s|^SERVICE_ROLE_KEY=.*|SERVICE_ROLE_KEY=${current_svc}|" .env
+    echo "==> JWTs updated in docker/.env."
+  fi
+}
+
+# ── Main ──────────────────────────────────────────────────────────────────────
 CMD="${1:-up}"
-COMPOSE=(docker compose --env-file .env -f docker-compose.yml)
 
 case "$CMD" in
   up|start|"")
+    [ ! -f .env ] && bootstrap_env
+    refresh_jwts_if_needed
+
+    # Re-source after potential updates
+    # shellcheck disable=SC1091
+    source .env
+
+    COMPOSE=(docker compose --env-file .env -f docker-compose.yml)
     "${COMPOSE[@]}" up -d --build
+
+    APP_PORT="${APP_PORT:-3000}"
+    GATEWAY_PORT="${GATEWAY_PORT:-8000}"
+
     echo ""
-    echo "✅ Sonora is starting."
-    echo "   App:      http://localhost:${APP_PORT}"
-    echo "   Supabase: http://localhost:${GATEWAY_PORT}"
-    echo "   Logs:     ./docker/start.sh logs"
+    echo "✅  Sonora stack is starting (services may take ~30 s on first run)."
+    echo "    Gateway (auth/rest/storage): http://localhost:${GATEWAY_PORT}"
+    echo "    Postgres:                    localhost:54322"
+    echo ""
+    print_replit_config
     ;;
+
   down|stop)
-    "${COMPOSE[@]}" down ;;
+    docker compose --env-file .env -f docker-compose.yml down
+    ;;
+
   logs)
-    "${COMPOSE[@]}" logs -f ;;
+    docker compose --env-file .env -f docker-compose.yml logs -f
+    ;;
+
   reset)
-    "${COMPOSE[@]}" down -v ;;
+    echo "⚠️  This will DESTROY all database and storage data."
+    read -rp "Type 'yes' to confirm: " confirm
+    [ "$confirm" = "yes" ] || { echo "Aborted."; exit 0; }
+    docker compose --env-file .env -f docker-compose.yml down -v
+    echo "✅  Volumes deleted. Run ./docker/start.sh to start fresh."
+    ;;
+
+  config)
+    [ ! -f .env ] && { echo "No .env found — run ./docker/start.sh first."; exit 1; }
+    print_replit_config
+    ;;
+
   *)
-    echo "Unknown command: $CMD"; exit 1 ;;
+    echo "Unknown command: $CMD"
+    echo "Usage: $0 [up|down|logs|reset|config]"
+    exit 1
+    ;;
 esac

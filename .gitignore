@@ -30,3 +30,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Docker self-host secrets (auto-generated — never commit)
+docker/.env

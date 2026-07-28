@@ -51,9 +51,16 @@ supabase/
 docker/           # Self-hosted stack (Postgres + GoTrue + PostgREST + Storage + nginx)
 ```
 
-## Self-hosting
+## Self-hosting (own VPS database)
 
-The `docker/` directory contains a complete self-hosted Supabase stack. On Replit, the app uses the cloud Supabase project by default. See `docker/README.md` and `docker/docker-compose.yml` for the self-hosted setup.
+The `docker/` directory contains a complete self-hosted Supabase stack (Postgres + GoTrue + PostgREST + Storage + nginx). To switch from cloud Supabase to your own server:
+
+```bash
+# On your VPS — one command, fully automated:
+./docker/start.sh
+```
+
+The script auto-generates all secrets, detects your public IP, and prints the exact env vars to paste into Replit. See `docker/README.md` for full details including HTTPS/domain setup.
 
 ## User preferences
 

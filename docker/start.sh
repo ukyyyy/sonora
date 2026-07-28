@@ -96,6 +96,58 @@ detect_public_ip() {
   echo "$ip"
 }
 
+detect_firewall() {
+  # Returns: ufw | firewalld | iptables | none
+  if command -v ufw &>/dev/null && ufw status 2>/dev/null | grep -q "Status: active"; then
+    echo "ufw"
+  elif command -v firewall-cmd &>/dev/null && firewall-cmd --state 2>/dev/null | grep -q "running"; then
+    echo "firewalld"
+  elif command -v iptables &>/dev/null && iptables -L INPUT -n 2>/dev/null | grep -qv "ACCEPT.*all"; then
+    echo "iptables"
+  else
+    echo "none"
+  fi
+}
+
+open_ports() {
+  # shellcheck disable=SC1091
+  source .env
+  local gw="${GATEWAY_PORT:-8088}" app="${APP_PORT:-3000}"
+  local fw
+  fw=$(detect_firewall)
+
+  echo "==> Opening ports ${gw} and ${app} (firewall: ${fw})"
+  case "$fw" in
+    ufw)
+      sudo ufw allow "${gw}/tcp"
+      sudo ufw allow "${app}/tcp"
+      echo "✅  ufw rules added."
+      ;;
+    firewalld)
+      sudo firewall-cmd --permanent --add-port="${gw}/tcp"
+      sudo firewall-cmd --permanent --add-port="${app}/tcp"
+      sudo firewall-cmd --reload
+      echo "✅  firewalld rules added."
+      ;;
+    iptables)
+      sudo iptables -I INPUT -p tcp --dport "${gw}" -j ACCEPT
+      sudo iptables -I INPUT -p tcp --dport "${app}" -j ACCEPT
+      # Persist if iptables-save is available
+      if command -v iptables-save &>/dev/null && [ -f /etc/iptables/rules.v4 ]; then
+        sudo iptables-save | sudo tee /etc/iptables/rules.v4 >/dev/null
+        echo "✅  iptables rules added and saved."
+      else
+        echo "✅  iptables rules added (not persisted — reboot may reset them)."
+      fi
+      ;;
+    none)
+      echo "⚠️  No active OS firewall detected."
+      echo "   If you're on a cloud VPS (Hetzner / DigitalOcean / AWS / GCP),"
+      echo "   open ports ${gw} and ${app} in your provider's firewall / security-group panel."
+      ;;
+  esac
+}
+
 pick_free_port() {
   # Try up to 10 consecutive ports starting from $1; exit with error if all taken.
   local port="${1:-3000}"
@@ -153,10 +205,38 @@ print_config() {
   echo "  ── Keep these secret (never public) ─────────────────────────────"
   echo "  SUPABASE_SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY}"
   echo ""
-  echo "  ── Firewall — open these ports ──────────────────────────────────"
-  echo "  ${gw_port}   Supabase gateway  (required — browser + app connect here)"
-  echo "  ${app_port}   App               (required — serves the frontend)"
-  echo "  54322  Postgres          (optional — only for direct DB access)"
+  echo "  ── Firewall ─────────────────────────────────────────────────────"
+  local fw
+  fw=$(detect_firewall)
+  case "$fw" in
+    ufw)
+      echo "  ufw detected — run to open ports:"
+      echo "    sudo ufw allow ${gw_port}/tcp"
+      echo "    sudo ufw allow ${app_port}/tcp"
+      echo "  Or let the script do it: ./docker/start.sh open-ports"
+      ;;
+    firewalld)
+      echo "  firewalld detected — run to open ports:"
+      echo "    sudo firewall-cmd --permanent --add-port=${gw_port}/tcp"
+      echo "    sudo firewall-cmd --permanent --add-port=${app_port}/tcp"
+      echo "    sudo firewall-cmd --reload"
+      echo "  Or let the script do it: ./docker/start.sh open-ports"
+      ;;
+    iptables)
+      echo "  iptables detected — run to open ports:"
+      echo "    sudo iptables -I INPUT -p tcp --dport ${gw_port} -j ACCEPT"
+      echo "    sudo iptables -I INPUT -p tcp --dport ${app_port} -j ACCEPT"
+      echo "  Or let the script do it: ./docker/start.sh open-ports"
+      ;;
+    none)
+      echo "  No OS firewall detected."
+      echo "  ⚠️  If on a cloud VPS (Hetzner/DigitalOcean/AWS) open ports"
+      echo "     ${gw_port} and ${app_port} in your provider's firewall/security-group panel."
+      ;;
+    *)
+      echo "  Run: ./docker/start.sh open-ports  (or open ${gw_port} and ${app_port} manually)"
+      ;;
+  esac
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
@@ -255,6 +335,11 @@ case "$CMD" in
 
   logs)
     docker compose --env-file .env -f docker-compose.yml logs -f
+    ;;
+
+  open-ports|openports)
+    [ ! -f .env ] && { echo "No .env found — run ./docker/start.sh first."; exit 1; }
+    open_ports
     ;;
 
   reset)

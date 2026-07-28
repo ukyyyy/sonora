@@ -9,122 +9,37 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WiderrufRouteImport } from './routes/widerruf'
-import { Route as SupportRouteImport } from './routes/support'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as SearchRouteImport } from './routes/search'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as ReportRouteImport } from './routes/report'
-import { Route as PremiumRouteImport } from './routes/premium'
-import { Route as LikedRouteImport } from './routes/liked'
-import { Route as LibraryRouteImport } from './routes/library'
-import { Route as InstallRouteImport } from './routes/install'
-import { Route as ImpressumRouteImport } from './routes/impressum'
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as DsaRouteImport } from './routes/dsa'
-import { Route as DatenschutzRouteImport } from './routes/datenschutz'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as BecomeArtistRouteImport } from './routes/become-artist'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AgbRouteImport } from './routes/agb'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as PlaylistIdRouteImport } from './routes/playlist.$id'
-import { Route as CheckoutReturnRouteImport } from './routes/checkout/return'
-import { Route as ArtistIdRouteImport } from './routes/artist.$id'
-import { Route as ApiSitemapDotxmlRouteImport } from './routes/api/sitemap[.]xml'
-import { Route as ApiRobotsDottxtRouteImport } from './routes/api/robots[.]txt'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AgbRouteImport } from './routes/agb'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as BecomeArtistRouteImport } from './routes/become-artist'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DatenschutzRouteImport } from './routes/datenschutz'
+import { Route as DsaRouteImport } from './routes/dsa'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as ImpressumRouteImport } from './routes/impressum'
+import { Route as InstallRouteImport } from './routes/install'
+import { Route as LibraryRouteImport } from './routes/library'
+import { Route as LikedRouteImport } from './routes/liked'
+import { Route as PremiumRouteImport } from './routes/premium'
+import { Route as ReportRouteImport } from './routes/report'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SearchRouteImport } from './routes/search'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SupportRouteImport } from './routes/support'
+import { Route as WiderrufRouteImport } from './routes/widerruf'
 import { Route as AlbumIdRouteImport } from './routes/album.$id'
+import { Route as ApiRobotsDottxtRouteImport } from './routes/api/robots[.]txt'
+import { Route as ApiSitemapDotxmlRouteImport } from './routes/api/sitemap[.]xml'
+import { Route as ArtistIdRouteImport } from './routes/artist.$id'
+import { Route as CheckoutReturnRouteImport } from './routes/checkout/return'
+import { Route as PlaylistIdRouteImport } from './routes/playlist.$id'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
-const WiderrufRoute = WiderrufRouteImport.update({
-  id: '/widerruf',
-  path: '/widerruf',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SupportRoute = SupportRouteImport.update({
-  id: '/support',
-  path: '/support',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SearchRoute = SearchRouteImport.update({
-  id: '/search',
-  path: '/search',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReportRoute = ReportRouteImport.update({
-  id: '/report',
-  path: '/report',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PremiumRoute = PremiumRouteImport.update({
-  id: '/premium',
-  path: '/premium',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LikedRoute = LikedRouteImport.update({
-  id: '/liked',
-  path: '/liked',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LibraryRoute = LibraryRouteImport.update({
-  id: '/library',
-  path: '/library',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InstallRoute = InstallRouteImport.update({
-  id: '/install',
-  path: '/install',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ImpressumRoute = ImpressumRouteImport.update({
-  id: '/impressum',
-  path: '/impressum',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DsaRoute = DsaRouteImport.update({
-  id: '/dsa',
-  path: '/dsa',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DatenschutzRoute = DatenschutzRouteImport.update({
-  id: '/datenschutz',
-  path: '/datenschutz',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BecomeArtistRoute = BecomeArtistRouteImport.update({
-  id: '/become-artist',
-  path: '/become-artist',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AgbRoute = AgbRouteImport.update({
-  id: '/agb',
-  path: '/agb',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -132,29 +47,99 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AgbRoute = AgbRouteImport.update({
+  id: '/agb',
+  path: '/agb',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PlaylistIdRoute = PlaylistIdRouteImport.update({
-  id: '/playlist/$id',
-  path: '/playlist/$id',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
-  id: '/checkout/return',
-  path: '/checkout/return',
+const BecomeArtistRoute = BecomeArtistRouteImport.update({
+  id: '/become-artist',
+  path: '/become-artist',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ArtistIdRoute = ArtistIdRouteImport.update({
-  id: '/artist/$id',
-  path: '/artist/$id',
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiSitemapDotxmlRoute = ApiSitemapDotxmlRouteImport.update({
-  id: '/api/sitemap.xml',
-  path: '/api/sitemap.xml',
+const DatenschutzRoute = DatenschutzRouteImport.update({
+  id: '/datenschutz',
+  path: '/datenschutz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DsaRoute = DsaRouteImport.update({
+  id: '/dsa',
+  path: '/dsa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImpressumRoute = ImpressumRouteImport.update({
+  id: '/impressum',
+  path: '/impressum',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InstallRoute = InstallRouteImport.update({
+  id: '/install',
+  path: '/install',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LibraryRoute = LibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LikedRoute = LikedRouteImport.update({
+  id: '/liked',
+  path: '/liked',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PremiumRoute = PremiumRouteImport.update({
+  id: '/premium',
+  path: '/premium',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportRoute = ReportRouteImport.update({
+  id: '/report',
+  path: '/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WiderrufRoute = WiderrufRouteImport.update({
+  id: '/widerruf',
+  path: '/widerruf',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AlbumIdRoute = AlbumIdRouteImport.update({
+  id: '/album/$id',
+  path: '/album/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRobotsDottxtRoute = ApiRobotsDottxtRouteImport.update({
@@ -162,9 +147,24 @@ const ApiRobotsDottxtRoute = ApiRobotsDottxtRouteImport.update({
   path: '/api/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AlbumIdRoute = AlbumIdRouteImport.update({
-  id: '/album/$id',
-  path: '/album/$id',
+const ApiSitemapDotxmlRoute = ApiSitemapDotxmlRouteImport.update({
+  id: '/api/sitemap.xml',
+  path: '/api/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ArtistIdRoute = ArtistIdRouteImport.update({
+  id: '/artist/$id',
+  path: '/artist/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
+  id: '/checkout/return',
+  path: '/checkout/return',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlaylistIdRoute = PlaylistIdRouteImport.update({
+  id: '/playlist/$id',
+  path: '/playlist/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicPaymentsWebhookRoute =
@@ -384,130 +384,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/widerruf': {
-      id: '/widerruf'
-      path: '/widerruf'
-      fullPath: '/widerruf'
-      preLoaderRoute: typeof WiderrufRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/support': {
-      id: '/support'
-      path: '/support'
-      fullPath: '/support'
-      preLoaderRoute: typeof SupportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/search': {
-      id: '/search'
-      path: '/search'
-      fullPath: '/search'
-      preLoaderRoute: typeof SearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/report': {
-      id: '/report'
-      path: '/report'
-      fullPath: '/report'
-      preLoaderRoute: typeof ReportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/premium': {
-      id: '/premium'
-      path: '/premium'
-      fullPath: '/premium'
-      preLoaderRoute: typeof PremiumRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/liked': {
-      id: '/liked'
-      path: '/liked'
-      fullPath: '/liked'
-      preLoaderRoute: typeof LikedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/library': {
-      id: '/library'
-      path: '/library'
-      fullPath: '/library'
-      preLoaderRoute: typeof LibraryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/install': {
-      id: '/install'
-      path: '/install'
-      fullPath: '/install'
-      preLoaderRoute: typeof InstallRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/impressum': {
-      id: '/impressum'
-      path: '/impressum'
-      fullPath: '/impressum'
-      preLoaderRoute: typeof ImpressumRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/forgot-password': {
-      id: '/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dsa': {
-      id: '/dsa'
-      path: '/dsa'
-      fullPath: '/dsa'
-      preLoaderRoute: typeof DsaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/datenschutz': {
-      id: '/datenschutz'
-      path: '/datenschutz'
-      fullPath: '/datenschutz'
-      preLoaderRoute: typeof DatenschutzRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/become-artist': {
-      id: '/become-artist'
-      path: '/become-artist'
-      fullPath: '/become-artist'
-      preLoaderRoute: typeof BecomeArtistRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/agb': {
-      id: '/agb'
-      path: '/agb'
-      fullPath: '/agb'
-      preLoaderRoute: typeof AgbRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -517,39 +398,137 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/agb': {
+      id: '/agb'
+      path: '/agb'
+      fullPath: '/agb'
+      preLoaderRoute: typeof AgbRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/playlist/$id': {
-      id: '/playlist/$id'
-      path: '/playlist/$id'
-      fullPath: '/playlist/$id'
-      preLoaderRoute: typeof PlaylistIdRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/checkout/return': {
-      id: '/checkout/return'
-      path: '/checkout/return'
-      fullPath: '/checkout/return'
-      preLoaderRoute: typeof CheckoutReturnRouteImport
+    '/become-artist': {
+      id: '/become-artist'
+      path: '/become-artist'
+      fullPath: '/become-artist'
+      preLoaderRoute: typeof BecomeArtistRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/artist/$id': {
-      id: '/artist/$id'
-      path: '/artist/$id'
-      fullPath: '/artist/$id'
-      preLoaderRoute: typeof ArtistIdRouteImport
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/sitemap.xml': {
-      id: '/api/sitemap.xml'
-      path: '/api/sitemap.xml'
-      fullPath: '/api/sitemap.xml'
-      preLoaderRoute: typeof ApiSitemapDotxmlRouteImport
+    '/datenschutz': {
+      id: '/datenschutz'
+      path: '/datenschutz'
+      fullPath: '/datenschutz'
+      preLoaderRoute: typeof DatenschutzRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dsa': {
+      id: '/dsa'
+      path: '/dsa'
+      fullPath: '/dsa'
+      preLoaderRoute: typeof DsaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/impressum': {
+      id: '/impressum'
+      path: '/impressum'
+      fullPath: '/impressum'
+      preLoaderRoute: typeof ImpressumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/install': {
+      id: '/install'
+      path: '/install'
+      fullPath: '/install'
+      preLoaderRoute: typeof InstallRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/library': {
+      id: '/library'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof LibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/liked': {
+      id: '/liked'
+      path: '/liked'
+      fullPath: '/liked'
+      preLoaderRoute: typeof LikedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/premium': {
+      id: '/premium'
+      path: '/premium'
+      fullPath: '/premium'
+      preLoaderRoute: typeof PremiumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/report': {
+      id: '/report'
+      path: '/report'
+      fullPath: '/report'
+      preLoaderRoute: typeof ReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/widerruf': {
+      id: '/widerruf'
+      path: '/widerruf'
+      fullPath: '/widerruf'
+      preLoaderRoute: typeof WiderrufRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/album/$id': {
+      id: '/album/$id'
+      path: '/album/$id'
+      fullPath: '/album/$id'
+      preLoaderRoute: typeof AlbumIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/robots.txt': {
@@ -559,11 +538,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/album/$id': {
-      id: '/album/$id'
-      path: '/album/$id'
-      fullPath: '/album/$id'
-      preLoaderRoute: typeof AlbumIdRouteImport
+    '/api/sitemap.xml': {
+      id: '/api/sitemap.xml'
+      path: '/api/sitemap.xml'
+      fullPath: '/api/sitemap.xml'
+      preLoaderRoute: typeof ApiSitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/artist/$id': {
+      id: '/artist/$id'
+      path: '/artist/$id'
+      fullPath: '/artist/$id'
+      preLoaderRoute: typeof ArtistIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout/return': {
+      id: '/checkout/return'
+      path: '/checkout/return'
+      fullPath: '/checkout/return'
+      preLoaderRoute: typeof CheckoutReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/playlist/$id': {
+      id: '/playlist/$id'
+      path: '/playlist/$id'
+      fullPath: '/playlist/$id'
+      preLoaderRoute: typeof PlaylistIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/payments/webhook': {
@@ -608,3 +608,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

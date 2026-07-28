@@ -1,12 +1,12 @@
 # Multi-stage build for the Sonora TanStack Start app.
 # Produces a Node.js server bundle via Nitro's node-server preset.
 
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .

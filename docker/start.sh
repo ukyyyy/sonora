@@ -337,6 +337,51 @@ case "$CMD" in
     docker compose --env-file .env -f docker-compose.yml logs -f
     ;;
 
+  diagnose)
+    [ ! -f .env ] && { echo "No .env found — run ./docker/start.sh first."; exit 1; }
+    # shellcheck disable=SC1091
+    source .env
+    local gw="${GATEWAY_PORT:-8088}" app="${APP_PORT:-3000}"
+    echo ""
+    echo "── Container status ────────────────────────────────────────────────"
+    docker compose --env-file .env -f docker-compose.yml ps
+    echo ""
+    echo "── Ports Docker is listening on ────────────────────────────────────"
+    ss -tlnp 2>/dev/null | grep -E "LISTEN|${gw}|${app}|54322" || \
+      netstat -tlnp 2>/dev/null | grep -E "LISTEN|${gw}|${app}|54322" || \
+      echo "(ss/netstat not available)"
+    echo ""
+    echo "── Local connectivity test ─────────────────────────────────────────"
+    curl -sI --max-time 3 "http://127.0.0.1:${app}" 2>/dev/null | head -3 \
+      && echo "✅  App reachable on localhost:${app}" \
+      || echo "❌  App NOT reachable on localhost:${app}"
+    curl -sI --max-time 3 "http://127.0.0.1:${gw}/auth/v1/health" 2>/dev/null | head -3 \
+      && echo "✅  Gateway reachable on localhost:${gw}" \
+      || echo "❌  Gateway NOT reachable on localhost:${gw}"
+    echo ""
+    echo "── OS firewall ─────────────────────────────────────────────────────"
+    if command -v ufw &>/dev/null; then
+      echo "ufw status: $(ufw status 2>/dev/null | head -1)"
+    fi
+    if command -v firewall-cmd &>/dev/null; then
+      echo "firewalld: $(firewall-cmd --state 2>/dev/null)"
+    fi
+    echo "iptables INPUT chain:"
+    iptables -L INPUT -n --line-numbers 2>/dev/null | head -10 || echo "(not available)"
+    echo ""
+    echo "── Most likely cause if local works but public doesn't ─────────────"
+    echo "   → Cloud provider firewall (Hetzner / DigitalOcean / AWS / GCP)"
+    echo "     This is SEPARATE from the OS firewall — must be configured"
+    echo "     in your provider's web console / dashboard."
+    echo ""
+    echo "   Hetzner:        console.hetzner.cloud → Firewall → add rules"
+    echo "   DigitalOcean:   cloud.digitalocean.com → Networking → Firewalls"
+    echo "   AWS:            EC2 → Security Groups → Inbound Rules"
+    echo "   GCP:            VPC → Firewall → allow tcp:${app},${gw}"
+    echo "   Vultr/Linode:   usually no cloud firewall — check OS only"
+    echo ""
+    ;;
+
   open-ports|openports)
     [ ! -f .env ] && { echo "No .env found — run ./docker/start.sh first."; exit 1; }
     open_ports

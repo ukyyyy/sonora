@@ -13,6 +13,43 @@ if [ ! -f .env ]; then
   cp .env.example .env
 fi
 
+pick_free_port() {
+  local port="${1:-3000}"
+  while :; do
+    if python - "$port" <<'PY' 2>/dev/null
+import socket
+import sys
+s = socket.socket()
+try:
+    s.bind(("0.0.0.0", int(sys.argv[1])))
+    s.close()
+    raise SystemExit(0)
+except OSError:
+    raise SystemExit(1)
+PY
+    then
+      echo "$port"
+      return 0
+    fi
+    port=$((port + 1))
+  done
+}
+
+APP_PORT="${APP_PORT:-$(grep '^APP_PORT' .env 2>/dev/null | cut -d= -f2 || true)}"
+GATEWAY_PORT="${GATEWAY_PORT:-$(grep '^GATEWAY_PORT' .env 2>/dev/null | cut -d= -f2 || true)}"
+
+if [ -z "$APP_PORT" ]; then
+  APP_PORT="3000"
+fi
+if [ -z "$GATEWAY_PORT" ]; then
+  GATEWAY_PORT="8000"
+fi
+
+APP_PORT="$(pick_free_port "$APP_PORT")"
+GATEWAY_PORT="$(pick_free_port "$GATEWAY_PORT")"
+
+export APP_PORT GATEWAY_PORT
+
 CMD="${1:-up}"
 COMPOSE=(docker compose --env-file .env -f docker-compose.yml)
 
@@ -21,8 +58,8 @@ case "$CMD" in
     "${COMPOSE[@]}" up -d --build
     echo ""
     echo "✅ Sonora is starting."
-    echo "   App:      http://localhost:$(grep ^APP_PORT .env | cut -d= -f2)"
-    echo "   Supabase: http://localhost:$(grep ^GATEWAY_PORT .env | cut -d= -f2)"
+    echo "   App:      http://localhost:${APP_PORT}"
+    echo "   Supabase: http://localhost:${GATEWAY_PORT}"
     echo "   Logs:     ./docker/start.sh logs"
     ;;
   down|stop)

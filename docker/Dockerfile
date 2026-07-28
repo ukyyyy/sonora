@@ -1,12 +1,12 @@
 # Multi-stage build for the Sonora TanStack Start app.
 # Produces a Node.js server bundle via Nitro's node-server preset.
 
-FROM oven/bun:1.1 AS deps
+FROM node:20-alpine AS deps
 WORKDIR /app
-COPY package.json bun.lockb* bunfig.toml* ./
-RUN bun install --frozen-lockfile || bun install
+COPY package.json package-lock.json ./
+RUN npm ci
 
-FROM oven/bun:1.1 AS build
+FROM node:20-alpine AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -19,7 +19,7 @@ ARG VITE_SUPABASE_PROJECT_ID
 ENV VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
 ENV VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
 ENV VITE_SUPABASE_PROJECT_ID=${VITE_SUPABASE_PROJECT_ID}
-RUN bun run build
+RUN npm run build
 
 FROM node:20-alpine AS runtime
 WORKDIR /app

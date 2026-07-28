@@ -6,7 +6,7 @@
 #   ./docker/start.sh down      stop all services
 #   ./docker/start.sh logs      tail live logs
 #   ./docker/start.sh reset     wipe volumes — DESTROYS ALL DATA
-#   ./docker/start.sh config    re-print the Replit env-var block
+#   ./docker/start.sh config    re-print the running URLs and env vars
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -56,18 +56,44 @@ PY
 }
 
 detect_public_ip() {
-  # Try several metadata/STUN sources; fall back to a placeholder
-  local ip
-  ip=$(curl -fsSL --max-time 3 https://api.ipify.org 2>/dev/null \
-    || curl -fsSL --max-time 3 https://checkip.amazonaws.com 2>/dev/null \
-    || curl -fsSL --max-time 3 https://ifconfig.me 2>/dev/null \
-    || true)
-  ip="${ip//[$'\t\r\n ']}"   # strip whitespace
-  if [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    echo "$ip"
-  else
-    echo "YOUR_VPS_IP"
+  local ip=""
+
+  _fetch() {
+    # Try curl then wget; both with short timeout
+    if command -v curl &>/dev/null; then
+      curl -fsSL --max-time 4 "$1" 2>/dev/null
+    elif command -v wget &>/dev/null; then
+      wget -qO- --timeout=4 "$1" 2>/dev/null
+    fi
+  }
+
+  # 1. Cloud provider instance-metadata (no DNS needed on most VPS/cloud)
+  ip=$(_fetch http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || true)  # AWS
+  [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || \
+  ip=$(_fetch http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address 2>/dev/null || true)  # Hetzner
+  [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || \
+  ip=$(_fetch http://169.254.169.254/metadata/v1/interface/0/ipv4/address 2>/dev/null || true)          # DigitalOcean
+
+  # 2. Public IP-echo services
+  [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || ip=$(_fetch https://api.ipify.org    || true)
+  [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || ip=$(_fetch https://ifconfig.me      || true)
+  [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || ip=$(_fetch https://ipecho.net/plain || true)
+  [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || ip=$(_fetch https://checkip.amazonaws.com || true)
+
+  # 3. Local network IP as last resort (private, but better than nothing)
+  if ! [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    ip=$(hostname -I 2>/dev/null | awk '{print $1}' || true)
+    if [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+      echo "⚠️  Could not detect public IP — using private IP ${ip}." \
+           "Update SUPABASE_PUBLIC_URL in docker/.env if this is wrong." >&2
+    else
+      ip="YOUR_VPS_IP"
+      echo "⚠️  Could not detect public IP. Set SUPABASE_PUBLIC_URL manually in docker/.env." >&2
+    fi
   fi
+
+  ip="${ip//[$'\t\r\n ']}"
+  echo "$ip"
 }
 
 pick_free_port() {
@@ -91,21 +117,32 @@ except OSError: raise SystemExit(1)
   exit 1
 }
 
-print_replit_config() {
-  # Source .env to read the values
+print_config() {
   # shellcheck disable=SC1091
   source .env
-  local pub_ip
+  local pub_ip gw_port app_port supa_url app_url
   pub_ip=$(detect_public_ip)
-  local gw_port="${GATEWAY_PORT:-8000}"
-  local supa_url="http://${pub_ip}:${gw_port}"
+  gw_port="${GATEWAY_PORT:-8088}"
+  app_port="${APP_PORT:-3000}"
+  supa_url="http://${pub_ip}:${gw_port}"
+  app_url="http://${pub_ip}:${app_port}"
+
+  # Patch SUPABASE_PUBLIC_URL in .env if it still contains localhost/127.0.0.1
+  if grep -qE 'SUPABASE_PUBLIC_URL=https?://(localhost|127\.0\.0\.1)' .env 2>/dev/null; then
+    sed -i "s|^SUPABASE_PUBLIC_URL=.*|SUPABASE_PUBLIC_URL=${supa_url}|" .env
+    echo "==> Updated SUPABASE_PUBLIC_URL to ${supa_url} in docker/.env"
+  fi
 
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo "  Copy these into your Replit project (Secrets + Env Vars)"
+  echo "  Sonora is running"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
-  echo "  ── Replit Env Vars (non-secret) ─────────────────────────────────"
+  echo "  App             →  ${app_url}"
+  echo "  Supabase API    →  ${supa_url}  (auth / rest / storage)"
+  echo "  Postgres        →  ${pub_ip}:54322"
+  echo ""
+  echo "  ── App environment (.env or your hosting panel) ─────────────────"
   echo "  SUPABASE_URL=${supa_url}"
   echo "  SUPABASE_PROJECT_ID=sonora"
   echo "  SUPABASE_PUBLISHABLE_KEY=${ANON_KEY}"
@@ -113,13 +150,13 @@ print_replit_config() {
   echo "  VITE_SUPABASE_PROJECT_ID=sonora"
   echo "  VITE_SUPABASE_PUBLISHABLE_KEY=${ANON_KEY}"
   echo ""
-  echo "  ── Replit Secrets (sensitive) ───────────────────────────────────"
+  echo "  ── Keep these secret (never public) ─────────────────────────────"
   echo "  SUPABASE_SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY}"
   echo ""
-  echo "  ── Firewall reminder ────────────────────────────────────────────"
-  echo "  Open port ${gw_port} (Supabase gateway) on your VPS firewall."
-  echo "  The app port (${APP_PORT:-3000}) only needs to be open if you run"
-  echo "  the app container here too; on Replit it is not needed."
+  echo "  ── Firewall — open these ports ──────────────────────────────────"
+  echo "  ${gw_port}   Supabase gateway  (required — browser + app connect here)"
+  echo "  ${app_port}   App               (required — serves the frontend)"
+  echo "  54322  Postgres          (optional — only for direct DB access)"
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
@@ -157,7 +194,7 @@ SERVICE_ROLE_KEY=${svc_key}
 # Public URL the browser and app hit (the nginx gateway).
 # Update SUPABASE_PUBLIC_URL if you put a domain/reverse-proxy in front.
 SUPABASE_PUBLIC_URL=http://${pub_ip}:${gw_port}
-SITE_URL=https://your-replit-app.replit.app
+SITE_URL=http://${pub_ip}:${app_port}
 
 # Ports
 APP_PORT=${app_port}
@@ -209,10 +246,7 @@ case "$CMD" in
 
     echo ""
     echo "✅  Sonora stack is starting (services may take ~30 s on first run)."
-    echo "    Gateway (auth/rest/storage): http://localhost:${GATEWAY_PORT}"
-    echo "    Postgres:                    localhost:54322"
-    echo ""
-    print_replit_config
+    print_config
     ;;
 
   down|stop)
@@ -233,7 +267,7 @@ case "$CMD" in
 
   config)
     [ ! -f .env ] && { echo "No .env found — run ./docker/start.sh first."; exit 1; }
-    print_replit_config
+    print_config
     ;;
 
   *)

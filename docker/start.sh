@@ -284,6 +284,42 @@ ENV
   echo "==> docker/.env created with freshly generated secrets."
 }
 
+# ── Reassign ports if current ones are taken ─────────────────────────────────
+refresh_ports_if_needed() {
+  # shellcheck disable=SC1091
+  source .env
+  local cur_app="${APP_PORT:-3000}" cur_gw="${GATEWAY_PORT:-8088}" changed=0
+
+  port_free() {
+    python3 -c "
+import socket, sys
+s = socket.socket()
+try: s.bind(('0.0.0.0', int(sys.argv[1]))); s.close(); raise SystemExit(0)
+except OSError: raise SystemExit(1)
+" "$1" 2>/dev/null
+  }
+
+  if ! port_free "$cur_app"; then
+    local new_app
+    new_app=$(pick_free_port $((cur_app + 1)))
+    echo "==> Port ${cur_app} is in use — switching app to ${new_app}"
+    sed -i "s|^APP_PORT=.*|APP_PORT=${new_app}|" .env
+    changed=1
+  fi
+
+  if ! port_free "$cur_gw"; then
+    local new_gw pub_ip
+    new_gw=$(pick_free_port $((cur_gw + 1)))
+    pub_ip=$(detect_public_ip)
+    echo "==> Port ${cur_gw} is in use — switching gateway to ${new_gw}"
+    sed -i "s|^GATEWAY_PORT=.*|GATEWAY_PORT=${new_gw}|" .env
+    sed -i "s|^SUPABASE_PUBLIC_URL=.*|SUPABASE_PUBLIC_URL=http://${pub_ip}:${new_gw}|" .env
+    changed=1
+  fi
+
+  [ $changed -eq 1 ] && echo "==> docker/.env updated with new ports."
+}
+
 # ── Regenerate JWTs if JWT_SECRET changed ─────────────────────────────────────
 refresh_jwts_if_needed() {
   # shellcheck disable=SC1091
@@ -313,39 +349,7 @@ case "$CMD" in
   up|start|"")
     [ ! -f .env ] && bootstrap_env
     refresh_jwts_if_needed
-
-    # ── Check ports are still free; reassign if taken by another process ──
-    # shellcheck disable=SC1091
-    source .env
-    local cur_app="${APP_PORT:-3000}" cur_gw="${GATEWAY_PORT:-8088}"
-    local new_app new_gw changed=0
-
-    port_free() {
-      python3 -c "
-import socket, sys
-s = socket.socket()
-try: s.bind(('0.0.0.0', int(sys.argv[1]))); s.close(); raise SystemExit(0)
-except OSError: raise SystemExit(1)
-" "$1" 2>/dev/null
-    }
-
-    if ! port_free "$cur_app"; then
-      new_app=$(pick_free_port $((cur_app + 1)))
-      echo "==> Port ${cur_app} is in use — switching app to ${new_app}"
-      sed -i "s|^APP_PORT=.*|APP_PORT=${new_app}|" .env
-      changed=1
-    fi
-    if ! port_free "$cur_gw"; then
-      new_gw=$(pick_free_port $((cur_gw + 1)))
-      echo "==> Port ${cur_gw} is in use — switching gateway to ${new_gw}"
-      sed -i "s|^GATEWAY_PORT=.*|GATEWAY_PORT=${new_gw}|" .env
-      # Also update SUPABASE_PUBLIC_URL to the new gateway port
-      local pub_ip
-      pub_ip=$(detect_public_ip)
-      sed -i "s|^SUPABASE_PUBLIC_URL=.*|SUPABASE_PUBLIC_URL=http://${pub_ip}:${new_gw}|" .env
-      changed=1
-    fi
-    [ $changed -eq 1 ] && echo "==> docker/.env updated with new ports."
+    refresh_ports_if_needed
 
     # Re-source after all updates
     # shellcheck disable=SC1091

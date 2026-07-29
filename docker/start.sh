@@ -317,7 +317,7 @@ except OSError: raise SystemExit(1)
     changed=1
   fi
 
-  [ $changed -eq 1 ] && echo "==> docker/.env updated with new ports."
+  if [ "$changed" -eq 1 ]; then echo "==> docker/.env updated with new ports."; fi
 }
 
 # ── Regenerate JWTs if JWT_SECRET changed ─────────────────────────────────────
